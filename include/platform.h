@@ -2,27 +2,26 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include <assert.h>
+#include <ctype.h>
+#include <math.h>
+#include <setjmp.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <string.h>
-#include <assert.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <stdarg.h>
-#include <setjmp.h>
-#include <math.h>
-#include <stdbool.h>
+#include <sys/types.h>
 
 /* host platform includes */
 #ifdef UNIX_HOST
-# include <stdint.h>
-# include <unistd.h>
+#include <stdint.h>
+#include <unistd.h>
 #elif defined(WIN32) /*(predefined on MSVC)*/
 #else
-# error ***** A platform must be explicitly defined! *****
+#error***** A platform must be explicitly defined! *****
 #endif
-
 
 /* configurable options */
 /* select your host type (or do it in the Makefile):
@@ -44,7 +43,6 @@
 #undef DEBUG_LEXER
 #undef DEBUG_VAR_SCOPE
 
-
 #if defined(__hppa__) || defined(__sparc__)
 /* the default data type to use for alignment */
 #define ALIGN_TYPE double
@@ -53,14 +51,14 @@
 #define ALIGN_TYPE void*
 #endif
 
-#define GLOBAL_TABLE_SIZE (97)                /* global variable table */
-#define STRING_TABLE_SIZE (97)                /* shared string table size */
-#define STRING_LITERAL_TABLE_SIZE (97)        /* string literal table size */
-#define RESERVED_WORD_TABLE_SIZE (97)         /* reserved word table size */
-#define PARAMETER_MAX (16)                    /* maximum number of parameters to a function */
-#define LINEBUFFER_MAX (256)                  /* maximum number of characters on a line */
-#define LOCAL_TABLE_SIZE (11)                 /* size of local variable table (can expand) */
-#define STRUCT_TABLE_SIZE (11)                /* size of struct/union member table (can expand) */
+#define GLOBAL_TABLE_SIZE (97)         /* global variable table */
+#define STRING_TABLE_SIZE (97)         /* shared string table size */
+#define STRING_LITERAL_TABLE_SIZE (97) /* string literal table size */
+#define RESERVED_WORD_TABLE_SIZE (97)  /* reserved word table size */
+#define PARAMETER_MAX (16)             /* maximum number of parameters to a function */
+#define LINEBUFFER_MAX (256)           /* maximum number of characters on a line */
+#define LOCAL_TABLE_SIZE (11)          /* size of local variable table (can expand) */
+#define STRUCT_TABLE_SIZE (11)         /* size of struct/union member table (can expand) */
 
 #define INTERACTIVE_PROMPT_START "starting picoc " PICOC_VERSION " (Ctrl+D to exit)\n"
 #define INTERACTIVE_PROMPT_STATEMENT "picoc> "

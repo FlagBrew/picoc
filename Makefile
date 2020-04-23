@@ -1,66 +1,73 @@
-CC=gcc
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+.SECONDEXPANSION:
 
-
-# Use $ xxd -i ./LICENSE > LICENSE.h
+# Use $ xxd -i ./LICENSE > include/LICENSE.h
 # to create the license info file. Should be signed char, add a
 # null character to the end of the array.
 
-# -O3 -g
-# -std=gnu11
-CFLAGS=-Wall -g -std=gnu11 -pedantic -DUNIX_HOST -DVER=\"`git show-ref --abbrev=8 --head --hash head`\" -DTAG=\"`git describe --abbrev=0 --tags`\"
+CC	:=	gcc
+CXX	:=	g++
+
+SOURCES				:=	source
+INCLUDES			:=	include
+
+CFILES		:=	$(patsubst ./%,%,$(foreach dir,$(SOURCES),$(call rwildcard,$(dir),*.c)))
+CPPFILES	:=	$(patsubst ./%,%,$(foreach dir,$(SOURCES),$(call rwildcard,$(dir),*.cpp)))
+EXEC_NAME	:=	picoc
+BUILD		:=	build
+
+ifeq ($(OS),Windows_NT)
+EXEC_NAME	:=	$(EXEC_NAME).exe
+CFILES		+=	platform/library_msvc.c platform/platform_msvc.c
+else
+CFILES		+=	platform/library_unix.c platform/platform_unix.c
+endif
+
+CFLAGS=-Wall -g -std=gnu11 -pedantic -DUNIX_HOST -DVER=\"`git show-ref --abbrev=8 --head --hash head`\" -DTAG=\"`git describe --abbrev=0 --tags`\" $(foreach dir, $(INCLUDES), -I$(CURDIR)/$(dir))
 LIBS=-lm -lreadline
 
-TARGET	= picoc
-SRCS	= picoc.c table.c lex.c parse.c expression.c heap.c type.c \
-	variable.c clibrary.c platform.c include.c debug.c \
-	platform/platform_unix.c platform/library_unix.c \
-	cstdlib/stdio.c cstdlib/math.c cstdlib/string.c cstdlib/stdlib.c \
-	cstdlib/time.c cstdlib/errno.c cstdlib/ctype.c cstdlib/stdbool.c \
-	cstdlib/unistd.c
-OBJS	:= $(SRCS:%.c=%.o)
+OFILES			:=	$(CFILES:.c=.c.o) $(CPPFILES:.cpp=.cpp.o)
+BUILD_OFILES	:=	$(subst //,/,$(subst /../,/__PrEvDiR/,$(subst /,//, $(OFILES))))
+BUILD_OFILES	:=	$(patsubst ../%,__PrEvDiR/%,$(BUILD_OFILES))
+BUILD_OFILES	:=	$(addprefix $(BUILD)/, $(BUILD_OFILES))
+DEPSFILES		:=	$(BUILD_OFILES:.o=.d)
 
-all: $(TARGET)
+LD		:=	$(if $(CPPFILES),$(CXX),$(CC))
+LDFLAGS	:=	-lm -lreadline
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
+.PHONY: all clean
+
+all: $(EXEC_NAME)
 
 test:	all
 	@(cd tests; make -s test)
 	@(cd tests; make -s csmith)
 	@(cd tests; make -s jpoirier)
 
-clean:
-	rm -f $(TARGET) $(OBJS) *~
+format:
+	clang-format -i $(CFILES) $(CPPFILES) $(foreach dir, $(INCLUDES), $(wildcard $(dir)/*.h)) $(foreach dir, $(INCLUDES), $(wildcard $(dir)/*.hpp))
 
 count:
 	@echo "Core:"
-	@cat picoc.h interpreter.h picoc.c table.c lex.c parse.c expression.c platform.c heap.c type.c variable.c include.c debug.c | grep -v '^[ 	]*/\*' | grep -v '^[ 	]*$$' | wc
+	@cat include/picoc.h include/interpreter.h source/picoc.c source/table.c source/lex.c source/parse.c source/expression.c source/platform.c source/heap.c source/type.c source/variable.c source/include.c source/debug.c | grep -v '^[ 	]*/\*' | grep -v '^[ 	]*$$' | wc
 	@echo ""
 	@echo "Everything:"
-	@cat $(SRCS) *.h */*.h | wc
+	@cat $(CFILES) $(CPPFILES) $(foreach dir, $(INCLUDES), $(wildcard $(dir)/*.h)) $(foreach dir, $(INCLUDES), $(wildcard $(dir)/*.hpp)) | wc
 
-.PHONY: clibrary.c
+clean:
+	@rm -rf $(BUILD)
+	@rm -f $(EXEC_NAME)
 
-picoc.o: picoc.c picoc.h
-table.o: table.c interpreter.h platform.h
-lex.o: lex.c interpreter.h platform.h
-parse.o: parse.c picoc.h interpreter.h platform.h
-expression.o: expression.c interpreter.h platform.h
-heap.o: heap.c interpreter.h platform.h
-type.o: type.c interpreter.h platform.h
-variable.o: variable.c interpreter.h platform.h
-clibrary.o: clibrary.c picoc.h interpreter.h platform.h
-platform.o: platform.c picoc.h interpreter.h platform.h
-include.o: include.c picoc.h interpreter.h platform.h
-debug.o: debug.c interpreter.h platform.h
-platform/platform_unix.o: platform/platform_unix.c picoc.h interpreter.h platform.h
-platform/library_unix.o: platform/library_unix.c interpreter.h platform.h
-cstdlib/stdio.o: cstdlib/stdio.c interpreter.h platform.h
-cstdlib/math.o: cstdlib/math.c interpreter.h platform.h
-cstdlib/string.o: cstdlib/string.c interpreter.h platform.h
-cstdlib/stdlib.o: cstdlib/stdlib.c interpreter.h platform.h
-cstdlib/time.o: cstdlib/time.c interpreter.h platform.h
-cstdlib/errno.o: cstdlib/errno.c interpreter.h platform.h
-cstdlib/ctype.o: cstdlib/ctype.c interpreter.h platform.h
-cstdlib/stdbool.o: cstdlib/stdbool.c interpreter.h platform.h
-cstdlib/unistd.o: cstdlib/unistd.c interpreter.h platform.h
+$(EXEC_NAME): $(BUILD_OFILES)
+	$(LD) $(BUILD_OFILES) $(LDFLAGS) -o $@
+	strip $@
+
+$(BUILD)/%.c.o: $$(subst __PrEvDiR,..,$$*.c)
+	@mkdir -p $(dir $@)
+	$(CC) -MMD -MP -MF $(@:.o=.d) $(CFLAGS) -c -o $@ $<
+
+$(BUILD)/%.cpp.o: $$(subst __PrEvDiR,..,$$*.cpp)
+	@mkdir -p $(dir $@)
+	$(CXX) -MMD -MP -MF $(@:.o=.d) $(CXXFLAGS) -c -o $@ $<
+
+include $(wildcard $(DEPSFILES))

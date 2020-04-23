@@ -6,7 +6,8 @@
 *.pdb
 *.exp
 picoc
-build/*
+picoc.exe
+build/
 archives/
 
 CMakeLists.txt
@@ -22,3 +23,5 @@ analysis.txt
 gmon.out
 tests/gmon.out
 .idea/
+
+.vscode/
