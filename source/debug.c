@@ -92,8 +92,7 @@ int DebugClearBreakpoint(struct ParseState* Parser)
     return false;
 }
 
-/* before we run a statement, check if there's anything we have to
-    do with the debugger here */
+/* before we run a statement, check if there's anything we have to do with the debugger here */
 void DebugCheckStatement(struct ParseState* Parser)
 {
     int DoBreak = false;

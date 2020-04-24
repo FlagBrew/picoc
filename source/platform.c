@@ -4,7 +4,7 @@
 #include "interpreter.h"
 #include "picoc.h"
 
-static void PrintSourceTextErrorLine(IOFILE* Stream, const char* FileName, const char* SourceText, int Line, int CharacterPos);
+void PrintSourceTextErrorLine(IOFILE* Stream, const char* FileName, const char* SourceText, int Line, int CharacterPos);
 
 #ifdef DEBUGGER
 static int gEnableDebugger = true;
@@ -125,8 +125,7 @@ void PrintSourceTextErrorLine(IOFILE* Stream, const char* FileName, const char* 
     }
     else
     {
-        /* assume we're in interactive mode - try to make the arrow match
-            up with the input text */
+        /* assume we're in interactive mode - try to make the arrow match up with the input text */
         for (CCount = 0; CCount < CharacterPos + (int)strlen(INTERACTIVE_PROMPT_STATEMENT); CCount++)
             PrintCh(' ', Stream);
     }
@@ -243,8 +242,7 @@ void PlatformVPrintf(IOFILE* Stream, const char* Format, va_list Args)
     }
 }
 
-/* make a new temporary name. takes a static buffer of char [7] as a parameter.
- * should be initialized to "XX0000"
+/* make a new temporary name. takes a static buffer of char [7] as a parameter. should be initialized to "XX0000"
  * where XX can be any characters */
 char* PlatformMakeTempName(Picoc* pc, char* TempNameBuffer)
 {

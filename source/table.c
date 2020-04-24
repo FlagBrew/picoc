@@ -23,7 +23,7 @@ unsigned int TableHash(const char* Key, int Len)
 
     for (Count = 0, Offset = 8; Count < Len; Count++, Offset += 7)
     {
-        if (Offset > sizeof(unsigned int) * 8 - 7)
+        if (Offset > (int)sizeof(unsigned int) * 8 - 7)
             Offset -= sizeof(unsigned int) * 8 - 6;
 
         Hash ^= *Key++ << Offset;
@@ -60,7 +60,7 @@ struct TableEntry* TableSearch(struct Table* Tbl, const char* Key, int* AddAt)
 
 /* set an identifier to a value. returns FALSE if it already exists.
  * Key must be a shared string from TableStrRegister() */
-int TableSet(Picoc* pc, struct Table* Tbl, char* Key, struct Value* Val, const char* DeclFileName, int DeclLine, int DeclColumn)
+int TableSet(Picoc* pc, struct Table* Tbl, char* Key, struct Value* Val, const char* DeclFileName, unsigned int DeclLine, unsigned int DeclColumn)
 {
     int AddAt;
     struct TableEntry* FoundEntry = TableSearch(Tbl, Key, &AddAt);
@@ -83,7 +83,7 @@ int TableSet(Picoc* pc, struct Table* Tbl, char* Key, struct Value* Val, const c
 
 /* find a value in a table. returns FALSE if not found.
  * Key must be a shared string from TableStrRegister() */
-int TableGet(struct Table* Tbl, const char* Key, struct Value** Val, const char** DeclFileName, int* DeclLine, int* DeclColumn)
+int TableGet(struct Table* Tbl, const char* Key, struct Value** Val, const char** DeclFileName, unsigned int* DeclLine, unsigned int* DeclColumn)
 {
     int AddAt;
     struct TableEntry* FoundEntry = TableSearch(Tbl, Key, &AddAt);
@@ -151,8 +151,7 @@ char* TableSetIdentifier(Picoc* pc, struct Table* Tbl, const char* Ident, int Id
         return &FoundEntry->p.Key[0];
     else
     {
-        /* add it to the table - we economise by not allocating
-            the whole structure here */
+        /* add it to the table - we economise by not allocating the whole structure here */
         struct TableEntry* NewEntry = HeapAllocMem(pc, sizeof(struct TableEntry) - sizeof(union TableEntryPayload) + IdentLen + 1);
         if (NewEntry == NULL)
             ProgramFailNoParser(pc, "(TableSetIdentifier) out of memory");

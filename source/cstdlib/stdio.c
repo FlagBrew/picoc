@@ -305,15 +305,15 @@ int StdioBasePrintf(struct ParseState* Parser, FILE* Stream, char* StrOut, int S
                         break; /* long integer */
                     case 'e':
                     case 'E':
-                        ShowType = &pc->FPType;
+                        ShowType = &pc->DoubleType;
                         break; /* double, exponent form */
                     case 'f':
                     case 'F':
-                        ShowType = &pc->FPType;
+                        ShowType = &pc->DoubleType;
                         break; /* double, fixed-point */
                     case 'g':
                     case 'G':
-                        ShowType = &pc->FPType;
+                        ShowType = &pc->DoubleType;
                         break; /* double, flexible format */
                     case 'a':
                     case 'A':
@@ -411,11 +411,19 @@ int StdioBasePrintf(struct ParseState* Parser, FILE* Stream, char* StrOut, int S
                         else
                             StdioOutPuts("XXX", &SOStream);
                     }
-                    else if (ShowType == &pc->FPType)
+                    else if (ShowType == &pc->FloatType)
                     {
                         /* show a floating point number */
                         if (IS_NUMERIC_COERCIBLE(ThisArg))
-                            StdioFprintfFP(&SOStream, OneFormatBuf, ExpressionCoerceFP(ThisArg));
+                            StdioFprintfFP(&SOStream, OneFormatBuf, ExpressionCoerceFloat(ThisArg));
+                        else
+                            StdioOutPuts("XXX", &SOStream);
+                    }
+                    else if (ShowType == &pc->DoubleType)
+                    {
+                        /* show a floating point number */
+                        if (IS_NUMERIC_COERCIBLE(ThisArg))
+                            StdioFprintfFP(&SOStream, OneFormatBuf, ExpressionCoerceDouble(ThisArg));
                         else
                             StdioOutPuts("XXX", &SOStream);
                     }

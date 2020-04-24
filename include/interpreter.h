@@ -1,6 +1,7 @@
 /* picoc main header file - this has all the main data structures and
  * function prototypes. If you're just calling picoc you should look at the
  * external interface instead, in picoc.h */
+
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
@@ -54,15 +55,22 @@
 typedef FILE IOFILE;
 
 /* coercion of numeric types to other numeric types */
-#define IS_FP(v) ((v)->Typ->Base == TypeFP)
-#define FP_VAL(v) ((v)->Val->FP)
+#define IS_FLOAT(v) ((v)->Typ->Base == TypeFloat)
+#define FLOAT_VAL(v) ((v)->Val->Float)
+#define IS_DOUBLE(v) ((v)->Typ->Base == TypeDouble)
+#define DOUBLE_VAL(v) ((v)->Val->Double)
+#define IS_FP(v) (IS_FLOAT(v) || IS_DOUBLE(v))
 
 /* ap -> AllowPointerCoercion = true | false */
 #define IS_POINTER_COERCIBLE(v, ap) ((ap) ? ((v)->Typ->Base == TypePointer) : 0)
 #define POINTER_COERCE(v) ((int)(v)->Val->Pointer)
 
-#define IS_INTEGER_NUMERIC_TYPE(t) ((t)->Base >= TypeInt && (t)->Base <= TypeUnsignedLong)
-#define IS_INTEGER_NUMERIC(v) IS_INTEGER_NUMERIC_TYPE((v)->Typ)
+#define IS_INTEGER_UNSIGNED_TYPE(t) ((t)->Base >= TypeUnsignedInt && (t)->Base <= TypeUnsignedLong)
+#define IS_INTEGER_SIGNED_TYPE(t) ((t)->Base >= TypeInt && (t)->Base <= TypeLong)
+#define IS_INTEGER_NUMERIC_TYPE(t) (IS_INTEGER_UNSIGNED_TYPE(t) || IS_INTEGER_SIGNED_TYPE(t))
+#define IS_INTEGER_UNSIGNED(v) (IS_INTEGER_UNSIGNED_TYPE((v)->Typ))
+#define IS_INTEGER_SIGNED(v) (IS_INTEGER_SIGNED_TYPE((v)->Typ))
+#define IS_INTEGER_NUMERIC(v) (IS_INTEGER_NUMERIC_TYPE((v)->Typ))
 #define IS_NUMERIC_COERCIBLE(v) (IS_INTEGER_NUMERIC(v) || IS_FP(v))
 #define IS_NUMERIC_COERCIBLE_PLUS_POINTERS(v, ap) (IS_NUMERIC_COERCIBLE(v) || IS_POINTER_COERCIBLE(v, ap))
 
@@ -121,7 +129,11 @@ enum LexToken
     TokenCloseBracket,
     /* 0x2d */ TokenIdentifier,
     TokenIntegerConstant,
-    TokenFPConstant,
+    TokenUnsignedIntegerConstant,
+    TokenLongConstant,
+    TokenUnsignedLongConstant,
+    TokenFloatConstant,
+    TokenDoubleConstant,
     TokenStringConstant,
     TokenCharacterConstant,
     /* 0x32 */ TokenSemicolon,
@@ -198,18 +210,17 @@ struct ParseState
     Picoc* pc;                       /* the picoc instance this parser is a part of */
     const unsigned char* Pos;        /* the character position in the source text */
     char* FileName;                  /* what file we're executing (registered string) */
-    short int Line;                  /* line number we're executing */
-    short int CharacterPos;          /* character/column in the line we're executing */
+    unsigned int Line;               /* line number we're executing */
+    unsigned int CharacterPos;       /* character/column in the line we're executing */
     enum RunMode Mode;               /* whether to skip or run code */
     int SearchLabel;                 /* what case label we're searching for */
     const char* SearchGotoLabel;     /* what goto label we're searching for */
     const char* SourceText;          /* the entire source text */
     short int HashIfLevel;           /* how many "if"s we're nested down */
-    short int HashIfEvaluateToLevel; /* if we're not evaluating an if branch,
-                                       what the last evaluated level was */
+    short int HashIfEvaluateToLevel; /* if we're not evaluating an if branch, what the last evaluated level was */
     char DebugMode;                  /* debugging mode */
-    int ScopeID;                     /* for keeping track of local variables (free them after t
-                                        hey go out of scope) */
+    int ScopeID;                     /* for keeping track of local variables (free them after they go out of scope) */
+    char FreshGotoSearch;
 };
 
 /* values */
@@ -225,8 +236,10 @@ enum BaseType
     TypeUnsignedChar,
     /* unsigned 8-bit number */ /* must be before unsigned long */
     TypeUnsignedLong,           /* unsigned long integer */
-    TypeFP,                     /* floating point */
+    TypeFloat,                  /* float */
+    TypeDouble,                 /* double */
     TypeFunction,               /* a function */
+    TypeFunctionPtr,            /* a function pointer */
     TypeMacro,                  /* a macro */
     TypePointer,                /* a pointer */
     TypeArray,                  /* an array of a sub-type */
@@ -258,13 +271,11 @@ struct FuncDef
 {
     struct ValueType* ReturnType; /* the return value type */
     int NumParams;                /* the number of parameters */
-    int VarArgs;                  /* has a variable number of arguments after
-                                      the explicitly specified ones */
+    int VarArgs;                  /* has a variable number of arguments after the explicitly specified ones */
     struct ValueType** ParamType; /* array of parameter types */
     char** ParamName;             /* array of parameter names */
     void (*Intrinsic)();          /* intrinsic call address or NULL */
-    struct ParseState Body;       /* lexical tokens of the function body if
-                                      not intrinsic */
+    struct ParseState Body;       /* lexical tokens of the function body if not intrinsic */
 };
 
 /* macro definition */
@@ -272,8 +283,7 @@ struct MacroDef
 {
     int NumParams;          /* the number of parameters */
     char** ParamName;       /* array of parameter names */
-    struct ParseState Body; /* lexical tokens of the function body
-                                    if not intrinsic */
+    struct ParseState Body; /* lexical tokens of the function body if not intrinsic */
 };
 
 /* values */
@@ -288,12 +298,12 @@ union AnyValue
     unsigned long UnsignedLongInteger;
     unsigned char UnsignedCharacter;
     char* Identifier;
-    char ArrayMem[2]; /* placeholder for where the data starts,
-                          doesn't point to it */
+    char ArrayMem[2]; /* placeholder for where the data starts, doesn't point to it */
     struct ValueType* Typ;
     struct FuncDef FuncDef;
     struct MacroDef MacroDef;
-    double FP;
+    float Float;
+    double Double;
     void* Pointer; /* unsafe native pointers */
 };
 
@@ -332,8 +342,8 @@ struct TableEntry
         struct BreakpointEntry
         {
             const char* FileName;
-            short int Line;
-            short int CharacterPos;
+            unsigned int Line;
+            unsigned int CharacterPos;
         } b;
 
     } p;
@@ -496,13 +506,15 @@ struct Picoc_Struct
     struct ValueType UnsignedShortType;
     struct ValueType UnsignedLongType;
     struct ValueType UnsignedCharType;
-    struct ValueType FPType;
+    struct ValueType FloatType;
+    struct ValueType DoubleType;
     struct ValueType VoidType;
     struct ValueType TypeType;
     struct ValueType FunctionType;
     struct ValueType MacroType;
     struct ValueType EnumType;
     struct ValueType GotoLabelType;
+    struct ValueType FunctionPtrType;
     struct ValueType* CharPtrType;
     struct ValueType* CharPtrPtrType;
     struct ValueType* CharArrayType;
@@ -540,8 +552,10 @@ extern void TableInit(Picoc* pc);
 extern char* TableStrRegister(Picoc* pc, const char* Str);
 extern char* TableStrRegister2(Picoc* pc, const char* Str, int Len);
 extern void TableInitTable(struct Table* Tbl, struct TableEntry** HashTable, int Size, int OnHeap);
-extern int TableSet(Picoc* pc, struct Table* Tbl, char* Key, struct Value* Val, const char* DeclFileName, int DeclLine, int DeclColumn);
-extern int TableGet(struct Table* Tbl, const char* Key, struct Value** Val, const char** DeclFileName, int* DeclLine, int* DeclColumn);
+extern int TableSet(
+    Picoc* pc, struct Table* Tbl, char* Key, struct Value* Val, const char* DeclFileName, unsigned int DeclLine, unsigned int DeclColumn);
+extern int TableGet(
+    struct Table* Tbl, const char* Key, struct Value** Val, const char** DeclFileName, unsigned int* DeclLine, unsigned int* DeclColumn);
 extern struct Value* TableDelete(Picoc* pc, struct Table* Tbl, const char* Key);
 extern char* TableSetIdentifier(Picoc* pc, struct Table* Tbl, const char* Ident, int IdentLen);
 extern void TableStrFree(Picoc* pc);
@@ -566,7 +580,7 @@ extern void LexInteractiveStatementPrompt(Picoc* pc);
  * void PicocParseInteractive(); */
 extern void PicocParseInteractiveNoStartPrompt(Picoc* pc, int EnableDebugger);
 extern enum ParseResult ParseStatement(struct ParseState* Parser, int CheckTrailingSemicolon);
-extern struct Value* ParseFunctionDefinition(struct ParseState* Parser, struct ValueType* ReturnType, char* Identifier);
+extern struct Value* ParseFunctionDefinition(struct ParseState* Parser, struct ValueType* ReturnType, char* Identifier, int IsPointerDecl);
 extern void ParseCleanup(Picoc* pc);
 extern void ParserCopyPos(struct ParseState* To, struct ParseState* From);
 extern void ParserCopy(struct ParseState* To, struct ParseState* From);
@@ -578,7 +592,8 @@ extern void ExpressionAssign(struct ParseState* Parser, struct Value* DestValue,
     int ParamNo, int AllowPointerCoercion);
 extern long ExpressionCoerceInteger(struct Value* Val);
 extern unsigned long ExpressionCoerceUnsignedInteger(struct Value* Val);
-extern double ExpressionCoerceFP(struct Value* Val);
+extern float ExpressionCoerceFloat(struct Value* Val);
+extern double ExpressionCoerceDouble(struct Value* Val);
 
 /* type.c */
 extern void TypeInit(Picoc* pc);
@@ -589,11 +604,13 @@ extern int TypeStackSizeValue(struct Value* Val);
 extern int TypeLastAccessibleOffset(Picoc* pc, struct Value* Val);
 extern int TypeParseFront(struct ParseState* Parser, struct ValueType** Typ, int* IsStatic);
 extern void TypeParseIdentPart(struct ParseState* Parser, struct ValueType* BasicTyp, struct ValueType** Typ, char** Identifier);
+extern int TypeParseFunctionPointer(struct ParseState* Parser, struct ValueType* BasicTyp, struct ValueType** Typ, char** Identifier);
 extern void TypeParse(struct ParseState* Parser, struct ValueType** Typ, char** Identifier, int* IsStatic);
 extern struct ValueType* TypeGetMatching(Picoc* pc, struct ParseState* Parser, struct ValueType* ParentType, enum BaseType Base, int ArraySize,
     const char* Identifier, int AllowDuplicates);
 extern struct ValueType* TypeCreateOpaqueStruct(Picoc* pc, struct ParseState* Parser, const char* StructName, int Size);
 extern int TypeIsForwardDeclared(struct ParseState* Parser, struct ValueType* Typ);
+extern int TypeIsUnsigned(struct ValueType* Typ);
 
 /* heap.c */
 #ifdef DEBUG_HEAP
@@ -695,11 +712,11 @@ extern void DebugCleanup(Picoc* pc);
 extern void DebugCheckStatement(struct ParseState* Parser);
 extern void DebugSetBreakpoint(struct ParseState* Parser);
 extern int DebugClearBreakpoint(struct ParseState* Parser);
-extern void DebugStep(void)
+extern void DebugStep(void);
 #endif
 
-    /* stdio.c */
-    extern const char StdioDefs[];
+/* stdio.c */
+extern const char StdioDefs[];
 extern struct LibraryFunction StdioFunctions[];
 extern void StdioSetupFunc(Picoc* pc);
 

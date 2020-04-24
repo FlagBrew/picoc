@@ -7,7 +7,7 @@ static int Stdlib_ZeroValue = 0;
 
 void StdlibAtof(struct ParseState* Parser, struct Value* ReturnValue, struct Value** Param, int NumArgs)
 {
-    ReturnValue->Val->FP = atof(Param[0]->Val->Pointer);
+    ReturnValue->Val->Double = atof(Param[0]->Val->Pointer);
 }
 
 void StdlibAtoi(struct ParseState* Parser, struct Value* ReturnValue, struct Value** Param, int NumArgs)
@@ -22,7 +22,7 @@ void StdlibAtol(struct ParseState* Parser, struct Value* ReturnValue, struct Val
 
 void StdlibStrtod(struct ParseState* Parser, struct Value* ReturnValue, struct Value** Param, int NumArgs)
 {
-    ReturnValue->Val->FP = strtod(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
+    ReturnValue->Val->Double = strtod(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
 void StdlibStrtol(struct ParseState* Parser, struct Value* ReturnValue, struct Value** Param, int NumArgs)
@@ -135,7 +135,7 @@ typedef struct { \
 #endif
 
 /* all stdlib.h functions */
-struct LibraryFunction StdlibFunctions[] = {{StdlibAtof, "float atof(char *);"}, {StdlibStrtod, "float strtod(char *,char **);"},
+struct LibraryFunction StdlibFunctions[] = {{StdlibAtof, "double atof(char *);"}, {StdlibStrtod, "double strtod(char *,char **);"},
     {StdlibAtoi, "int atoi(char *);"}, {StdlibAtol, "int atol(char *);"}, {StdlibStrtol, "int strtol(char *,char **,int);"},
     {StdlibStrtoul, "int strtoul(char *,char **,int);"}, {StdlibMalloc, "void *malloc(int);"}, {StdlibCalloc, "void *calloc(int,int);"},
     {StdlibRealloc, "void *realloc(void *,int);"}, {StdlibFree, "void free(void *);"}, {StdlibRand, "int rand();"}, {StdlibSrand, "void srand(int);"},

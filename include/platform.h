@@ -35,14 +35,6 @@
 #undef USE_READLINE
 #endif
 
-/* undocumented, but probably useful */
-#undef DEBUG_HEAP
-#undef DEBUG_EXPRESSIONS
-#undef FANCY_ERROR_MESSAGES
-#undef DEBUG_ARRAY_INITIALIZER
-#undef DEBUG_LEXER
-#undef DEBUG_VAR_SCOPE
-
 #if defined(__hppa__) || defined(__sparc__)
 /* the default data type to use for alignment */
 #define ALIGN_TYPE double
@@ -59,6 +51,7 @@
 #define LINEBUFFER_MAX (256)           /* maximum number of characters on a line */
 #define LOCAL_TABLE_SIZE (11)          /* size of local variable table (can expand) */
 #define STRUCT_TABLE_SIZE (11)         /* size of struct/union member table (can expand) */
+#define GOTO_LABELS_TABLE_SIZE (5)     /* size of goto labels table */
 
 #define INTERACTIVE_PROMPT_START "starting picoc " PICOC_VERSION " (Ctrl+D to exit)\n"
 #define INTERACTIVE_PROMPT_STATEMENT "picoc> "

@@ -1,4 +1,5 @@
 /*  */
+
 #include "interpreter.h"
 #include "picoc.h"
 
@@ -39,7 +40,7 @@ void LibraryAdd(Picoc* pc, struct LibraryFunction* FuncList)
         Tokens = LexAnalyse(pc, (const char*)IntrinsicName, FuncList[Count].Prototype, strlen((char*)FuncList[Count].Prototype), NULL);
         LexInitParser(&Parser, pc, FuncList[Count].Prototype, Tokens, IntrinsicName, true, false);
         TypeParse(&Parser, &ReturnType, &Identifier, NULL);
-        NewValue                         = ParseFunctionDefinition(&Parser, ReturnType, Identifier);
+        NewValue                         = ParseFunctionDefinition(&Parser, ReturnType, Identifier, false);
         NewValue->Val->FuncDef.Intrinsic = FuncList[Count].Func;
         HeapFreeMem(pc, Tokens);
     }
@@ -77,7 +78,10 @@ void PrintType(struct ValueType* Typ, IOFILE* Stream)
         case TypeUnsignedChar:
             PrintStr("unsigned char", Stream);
             break;
-        case TypeFP:
+        case TypeFloat:
+            PrintStr("float", Stream);
+            break;
+        case TypeDouble:
             PrintStr("double", Stream);
             break;
         case TypeFunction:
@@ -115,6 +119,9 @@ void PrintType(struct ValueType* Typ, IOFILE* Stream)
             break;
         case Type_Type:
             PrintStr("type ", Stream);
+            break;
+        case TypeFunctionPtr:
+            PrintStr("fptr ", Stream);
             break;
     }
 }

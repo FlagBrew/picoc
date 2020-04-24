@@ -3,18 +3,21 @@
 #ifndef PICOC_H
 #define PICOC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* picoc version number */
 #ifdef VER
 /* VER, the git hash number, and TAG are obtained via the Makefile */
 #define PICOC_VERSION TAG " r" VER
 #else
-#define PICOC_VERSION "v2.3.2"
+#define PICOC_VERSION "v3.0.0"
 #endif
 
 #include "interpreter.h"
 
-/* this has to be a macro, otherwise errors will occur due to
-        the stack being corrupt */
+/* this has to be a macro, otherwise errors will occur due to the stack being corrupt */
 #define PicocPlatformSetExitPoint(pc) setjmp((pc)->PicocExitBuf)
 
 /* parse.c */
@@ -30,5 +33,9 @@ extern void PicocPlatformScanFile(Picoc* pc, const char* FileName);
 
 /* include.c */
 extern void PicocIncludeAllSystemHeaders(Picoc* pc);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PICOC_H */

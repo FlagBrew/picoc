@@ -2,7 +2,7 @@
 #include <math.h>
 
 // variables
-float a = 12.34 + 56.78;
+double a = 12.34 + 56.78;
 printf("%f\n", a);
 
 // infix operators

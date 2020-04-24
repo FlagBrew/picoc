@@ -23,7 +23,9 @@ else
 CFILES		+=	platform/library_unix.c platform/platform_unix.c
 endif
 
-CFLAGS=-Wall -g -std=gnu11 -pedantic -DUNIX_HOST -DVER=\"`git show-ref --abbrev=8 --head --hash head`\" -DTAG=\"`git describe --abbrev=0 --tags`\" $(foreach dir, $(INCLUDES), -I$(CURDIR)/$(dir))
+DEBUG_FLAGS	:=
+
+CFLAGS=-Wall -g -std=gnu11 -pedantic -DUNIX_HOST -DVER=\"`git show-ref --abbrev=8 --head --hash head`\" -DTAG=\"`git describe --abbrev=0 --tags`\" $(foreach dir, $(INCLUDES), -I$(CURDIR)/$(dir)) $(DEBUG_FLAGS)
 LIBS=-lm -lreadline
 
 OFILES			:=	$(CFILES:.c=.c.o) $(CPPFILES:.cpp=.cpp.o)

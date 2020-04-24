@@ -63,8 +63,7 @@ void VariableCleanup(Picoc* pc)
     VariableTableCleanup(pc, &pc->StringLiteralTable);
 }
 
-/* allocate some memory, either on the heap or the stack
-    and check if we've run out */
+/* allocate some memory, either on the heap or the stack and check if we've run out */
 void* VariableAlloc(Picoc* pc, struct ParseState* Parser, int Size, int OnHeap)
 {
     void* NewValue;
@@ -85,8 +84,7 @@ void* VariableAlloc(Picoc* pc, struct ParseState* Parser, int Size, int OnHeap)
     return NewValue;
 }
 
-/* allocate a value either on the heap or the stack using space
-    dependent on what type we want */
+/* allocate a value either on the heap or the stack using space dependent on what type we want */
 struct Value* VariableAllocValueAndData(Picoc* pc, struct ParseState* Parser, int DataSize, int IsLValue, struct Value* LValueFrom, int OnHeap)
 {
     struct Value* NewValue = VariableAlloc(pc, Parser, MEM_ALIGN(sizeof(struct Value)) + DataSize, OnHeap);
@@ -116,8 +114,7 @@ struct Value* VariableAllocValueFromType(
     return NewValue;
 }
 
-/* allocate a value either on the heap or the stack and copy
-    its value. handles overlapping data */
+/* allocate a value either on the heap or the stack and copy its value. handles overlapping data */
 struct Value* VariableAllocValueAndCopy(Picoc* pc, struct ParseState* Parser, struct Value* FromValue, int OnHeap)
 {
     int CopySize = TypeSizeValue(FromValue, true);
@@ -134,8 +131,7 @@ struct Value* VariableAllocValueAndCopy(Picoc* pc, struct ParseState* Parser, st
     return NewValue;
 }
 
-/* allocate a value either on the heap or the stack from an
-    existing AnyValue and type */
+/* allocate a value either on the heap or the stack from an existing AnyValue and type */
 struct Value* VariableAllocValueFromExistingData(
     struct ParseState* Parser, struct ValueType* Typ, union AnyValue* FromValue, int IsLValue, struct Value* LValueFrom)
 {
@@ -151,8 +147,7 @@ struct Value* VariableAllocValueFromExistingData(
     return NewValue;
 }
 
-/* allocate a value either on the heap or the stack from an
-    existing Value, sharing the value */
+/* allocate a value either on the heap or the stack from an existing Value, sharing the value */
 struct Value* VariableAllocValueShared(struct ParseState* Parser, struct Value* FromValue)
 {
     return VariableAllocValueFromExistingData(Parser, FromValue->Typ, FromValue->Val, FromValue->IsLValue, FromValue->IsLValue ? FromValue : NULL);
@@ -193,7 +188,7 @@ int VariableScopeBegin(struct ParseState* Parser, int* OldScopeID)
         for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = NextEntry)
         {
             NextEntry = Entry->Next;
-            if (Entry->p.v.Val->ScopeID == Parser->ScopeID && Entry->p.v.Val->OutOfScope == true)
+            if (Entry->p.v.Val->ScopeID == Parser->ScopeID && Entry->p.v.Val->OutOfScope)
             {
                 Entry->p.v.Val->OutOfScope = false;
                 Entry->p.v.Key             = (char*)((intptr_t)Entry->p.v.Key & ~1);
@@ -229,7 +224,7 @@ void VariableScopeEnd(struct ParseState* Parser, int ScopeID, int PrevScopeID)
         for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = NextEntry)
         {
             NextEntry = Entry->Next;
-            if ((Entry->p.v.Val->ScopeID == ScopeID) && (Entry->p.v.Val->OutOfScope == false))
+            if (Entry->p.v.Val->ScopeID == ScopeID && !Entry->p.v.Val->OutOfScope)
             {
 #ifdef DEBUG_VAR_SCOPE
                 if (!FirstPrint)
@@ -257,7 +252,7 @@ int VariableDefinedAndOutOfScope(Picoc* pc, const char* Ident)
     {
         for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = Entry->Next)
         {
-            if (Entry->p.v.Val->OutOfScope == true && (char*)((intptr_t)Entry->p.v.Key & ~1) == Ident)
+            if (Entry->p.v.Val->OutOfScope && (char*)((intptr_t)Entry->p.v.Key & ~1) == Ident)
                 return true;
         }
     }
@@ -292,12 +287,11 @@ struct Value* VariableDefine(Picoc* pc, struct ParseState* Parser, char* Ident, 
     return AssignValue;
 }
 
-/* define a variable. Ident must be registered. If it's a redefinition
-    from the same declaration don't throw an error */
+/* define a variable. Ident must be registered. If it's a redefinition from the same declaration don't throw an error */
 struct Value* VariableDefineButIgnoreIdentical(struct ParseState* Parser, char* Ident, struct ValueType* Typ, int IsStatic, int* FirstVisit)
 {
-    int DeclLine;
-    int DeclColumn;
+    unsigned int DeclLine;
+    unsigned int DeclColumn;
     const char* DeclFileName;
     Picoc* pc = Parser->pc;
     struct Value* ExistingValue;
@@ -313,8 +307,7 @@ struct Value* VariableDefineButIgnoreIdentical(struct ParseState* Parser, char* 
         char* MNEnd = &MangledName[LINEBUFFER_MAX - 1];
         const char* RegisteredMangledName;
 
-        /* make the mangled static name (avoiding using sprintf()
-            to minimise library impact) */
+        /* make the mangled static name (avoiding using sprintf() to minimise library impact) */
         memset((void*)&MangledName, '\0', sizeof(MangledName));
         *MNPos++ = '/';
         strncpy(MNPos, (char*)Parser->FileName, MNEnd - MNPos);
@@ -343,8 +336,7 @@ struct Value* VariableDefineButIgnoreIdentical(struct ParseState* Parser, char* 
             *FirstVisit = true;
         }
 
-        /* static variable exists in the global scope - now make a
-            mirroring variable in our own scope with the short name */
+        /* static variable exists in the global scope - now make a mirroring variable in our own scope with the short name */
         VariableDefinePlatformVar(Parser->pc, Parser, Ident, ExistingValue->Typ, ExistingValue->Val, true);
         return ExistingValue;
     }
@@ -401,8 +393,7 @@ void VariableDefinePlatformVar(Picoc* pc, struct ParseState* Parser, char* Ident
         ProgramFail(Parser, "'%s' is already defined", Ident);
 }
 
-/* free and/or pop the top value off the stack. Var must be
-    the top value on the stack! */
+/* free and/or pop the top value off the stack. Var must be the top value on the stack! */
 void VariableStackPop(struct ParseState* Parser, struct Value* Var)
 {
     int Success;
@@ -416,6 +407,7 @@ void VariableStackPop(struct ParseState* Parser, struct Value* Var)
     {
         if (Var->Val != NULL)
             HeapFreeMem(Parser->pc, Var->Val);
+
         Success = HeapPopStack(Parser->pc, Var, sizeof(struct Value)); /* free from heap */
     }
     else if (Var->ValOnStack)
@@ -456,8 +448,7 @@ void VariableStackFramePop(struct ParseState* Parser)
     HeapPopStackFrame(Parser->pc);
 }
 
-/* get a string literal. assumes that Ident is already
-    registered. NULL if not found */
+/* get a string literal. assumes that Ident is already registered. NULL if not found */
 struct Value* VariableStringLiteralGet(Picoc* pc, char* Ident)
 {
     struct Value* LVal = NULL;
