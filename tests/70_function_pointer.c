@@ -5,6 +5,12 @@ void print()
     printf("Output\n");
 }
 
-void (*funcPtr)() = print;
+void (*funcPtr)() = &print;
 
 funcPtr();
+
+funcPtr = print;
+
+funcPtr();
+
+void main() {}

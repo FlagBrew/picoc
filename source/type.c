@@ -613,6 +613,24 @@ int TypeIsForwardDeclared(struct ParseState* Parser, struct ValueType* Typ)
     return false;
 }
 
+struct ValueType* TypeParseFunctionPointerArguments(struct ParseState* Parser, struct ValueType* Type)
+{
+    enum LexToken Token = LexGetToken(Parser, NULL, true);
+    if (Token != TokenOpenBracket)
+        ProgramFail(Parser, "( expected here");
+    do
+    {
+        int IsStatic;
+        struct ValueType* ArgType;
+        TypeParseFront(Parser, &ArgType, &IsStatic);
+        Token = LexGetToken(Parser, NULL, true);
+    } while (Token == TokenComma);
+
+    if (Token != TokenCloseBracket)
+        ProgramFail(Parser, ") expected here");
+    return Type;
+}
+
 int TypeParseFunctionPointer(struct ParseState* Parser, struct ValueType* BasicType, struct ValueType** Type, char** Identifier)
 {
     struct Value* LexValue;

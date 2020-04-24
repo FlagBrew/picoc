@@ -369,7 +369,6 @@ int ParseDeclaration(struct ParseState* Parser, enum LexToken Token)
                 if (Typ == &pc->VoidType && Identifier != pc->StrEmpty)
                     ProgramFail(Parser, "can't define a void variable");
 
-                // TODO: CHECK THIS
                 if (Typ == &pc->FunctionPtrType || (Typ->Base == TypeArray && Typ->FromType->Base == TypeFunctionPtr))
                 {
                     FuncValue = ParseFunctionDefinition(Parser, BasicType, Identifier, true);
@@ -378,7 +377,6 @@ int ParseDeclaration(struct ParseState* Parser, enum LexToken Token)
                 if (Parser->Mode == RunModeRun || Parser->Mode == RunModeGoto)
                     NewVariable = VariableDefineButIgnoreIdentical(Parser, Identifier, Typ, IsStatic, &FirstVisit);
 
-                // TODO: CHECK THIS
                 if (FuncValue != NULL)
                     VariableFree(pc, FuncValue);
 
@@ -596,10 +594,9 @@ void ParseTypedef(struct ParseState* Parser)
 
     if (Parser->Mode == RunModeRun)
     {
-        TypPtr        = &Typ;
-        InitValue.Typ = &Parser->pc->TypeType;
-        InitValue.Val = (union AnyValue*)TypPtr;
-        // TODO: CHECK THIS
+        TypPtr             = &Typ;
+        InitValue.Typ      = &Parser->pc->TypeType;
+        InitValue.Val      = (union AnyValue*)TypPtr;
         InitValue.IsLValue = false;
         VariableDefine(Parser->pc, Parser, TypeName, &InitValue, NULL, false);
     }

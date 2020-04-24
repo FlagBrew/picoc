@@ -62,7 +62,6 @@ clean:
 
 $(EXEC_NAME): $(BUILD_OFILES)
 	$(LD) $(BUILD_OFILES) $(LDFLAGS) -o $@
-	strip $@
 
 $(BUILD)/%.c.o: $$(subst __PrEvDiR,..,$$*.c)
 	@mkdir -p $(dir $@)

@@ -177,6 +177,12 @@ void ExpressionStackShow(Picoc* pc, struct ExpressionStack* StackTop)
                 case TypeFunction:
                     printf("%s:function", StackTop->Val->Val->Identifier);
                     break;
+                case TypeFunctionPtr:
+                    if (StackTop->Val->Val->Identifier)
+                        printf("%s:functionptr", StackTop->Val->Val->Identifier);
+                    else
+                        printf("NULL:functionptr");
+                    break;
                 case TypeMacro:
                     printf("%s:macro", StackTop->Val->Val->Identifier);
                     break;
@@ -742,7 +748,7 @@ void ExpressionPrefixOperator(struct ParseState* Parser, struct ExpressionStack*
     switch (Op)
     {
         case TokenAmpersand:
-            if (!TopValue->IsLValue)
+            if (!TopValue->IsLValue && TopValue->Typ->Base != TypeFunctionPtr)
                 ProgramFail(Parser, "can't get the address of this");
 
             if (TopValue->Typ->Base == TypeFunctionPtr)
@@ -1914,7 +1920,7 @@ void ExpressionStackPushOperator(
     StackNode->Precedence             = Precedence;
     *StackTop                         = StackNode;
 #ifdef DEBUG_EXPRESSIONS
-    debugf("ExpressionStackPushOperator()\n");
+    printf("ExpressionStackPushOperator()\n");
 #endif
 #ifdef FANCY_ERROR_MESSAGES
     StackNode->Line         = Parser->Line;
@@ -2211,7 +2217,7 @@ int ExpressionParse(struct ParseState* Parser, struct Value** Result)
                     {
                         struct Value* FPtr    = VariableAllocValueFromType(Parser->pc, Parser, &Parser->pc->FunctionPtrType, false, NULL, false);
                         FPtr->Val->Identifier = LexValue->Val->Identifier;
-                        ExpressionStackPushValue(Parser, &StackTop, FPtr);
+                        ExpressionStackPushValueNode(Parser, &StackTop, FPtr);
                         VariableFree(Parser->pc, FPtr);
                     }
                     else

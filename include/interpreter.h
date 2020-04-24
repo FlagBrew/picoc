@@ -604,6 +604,7 @@ extern int TypeStackSizeValue(struct Value* Val);
 extern int TypeLastAccessibleOffset(Picoc* pc, struct Value* Val);
 extern int TypeParseFront(struct ParseState* Parser, struct ValueType** Typ, int* IsStatic);
 extern void TypeParseIdentPart(struct ParseState* Parser, struct ValueType* BasicTyp, struct ValueType** Typ, char** Identifier);
+struct ValueType* TypeParseFunctionPointerArguments(struct ParseState* Parser, struct ValueType* Type);
 extern int TypeParseFunctionPointer(struct ParseState* Parser, struct ValueType* BasicTyp, struct ValueType** Typ, char** Identifier);
 extern void TypeParse(struct ParseState* Parser, struct ValueType** Typ, char** Identifier, int* IsStatic);
 extern struct ValueType* TypeGetMatching(Picoc* pc, struct ParseState* Parser, struct ValueType* ParentType, enum BaseType Base, int ArraySize,
