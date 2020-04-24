@@ -775,7 +775,7 @@ enum LexToken LexScanGetToken(Picoc* pc, struct LexState* Lexer, struct Value** 
                 NEXTIS('=', TokenArithmeticExorAssign, TokenArithmeticExor);
                 break;
             case '~':
-                GotToken = TokenUnaryExor;
+                GotToken = TokenUnaryBitwiseNot;
                 break;
             case ',':
                 GotToken = TokenComma;

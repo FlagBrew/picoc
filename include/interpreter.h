@@ -67,9 +67,12 @@ typedef FILE IOFILE;
 
 #define IS_INTEGER_UNSIGNED_TYPE(t) ((t)->Base >= TypeUnsignedInt && (t)->Base <= TypeUnsignedLong)
 #define IS_INTEGER_SIGNED_TYPE(t) ((t)->Base >= TypeInt && (t)->Base <= TypeLong)
+#define INTEGER_PROMOTES_TO_INT_TYPE(t)                                                                                                              \
+    (((t)->Base >= TypeInt && (t)->Base <= TypeChar) || ((t)->Base >= TypeUnsignedShort && (t)->Base <= TypeUnsignedChar))
 #define IS_INTEGER_NUMERIC_TYPE(t) (IS_INTEGER_UNSIGNED_TYPE(t) || IS_INTEGER_SIGNED_TYPE(t))
 #define IS_INTEGER_UNSIGNED(v) (IS_INTEGER_UNSIGNED_TYPE((v)->Typ))
 #define IS_INTEGER_SIGNED(v) (IS_INTEGER_SIGNED_TYPE((v)->Typ))
+#define INTEGER_PROMOTES_TO_INT(v) (INTEGER_PROMOTES_TO_INT_TYPE((v)->Typ))
 #define IS_INTEGER_NUMERIC(v) (IS_INTEGER_NUMERIC_TYPE((v)->Typ))
 #define IS_NUMERIC_COERCIBLE(v) (IS_INTEGER_NUMERIC(v) || IS_FP(v))
 #define IS_NUMERIC_COERCIBLE_PLUS_POINTERS(v, ap) (IS_NUMERIC_COERCIBLE(v) || IS_POINTER_COERCIBLE(v, ap))
@@ -118,7 +121,7 @@ enum LexToken
     /* 0x21 */ TokenIncrement,
     TokenDecrement,
     TokenUnaryNot,
-    TokenUnaryExor,
+    TokenUnaryBitwiseNot,
     TokenSizeof,
     TokenCast,
     /* 0x27 */ TokenLeftSquareBracket,
@@ -233,21 +236,20 @@ enum BaseType
     TypeLong,          /* long integer */
     TypeUnsignedInt,   /* unsigned integer */
     TypeUnsignedShort, /* unsigned short integer */
-    TypeUnsignedChar,
-    /* unsigned 8-bit number */ /* must be before unsigned long */
-    TypeUnsignedLong,           /* unsigned long integer */
-    TypeFloat,                  /* float */
-    TypeDouble,                 /* double */
-    TypeFunction,               /* a function */
-    TypeFunctionPtr,            /* a function pointer */
-    TypeMacro,                  /* a macro */
-    TypePointer,                /* a pointer */
-    TypeArray,                  /* an array of a sub-type */
-    TypeStruct,                 /* aggregate type */
-    TypeUnion,                  /* merged type */
-    TypeEnum,                   /* enumerated integer type */
-    TypeGotoLabel,              /* a label we can "goto" */
-    Type_Type                   /* a type for storing types */
+    TypeUnsignedChar,  /* unsigned 8-bit number; must be before unsigned long */
+    TypeUnsignedLong,  /* unsigned long integer */
+    TypeFloat,         /* float */
+    TypeDouble,        /* double */
+    TypeFunction,      /* a function */
+    TypeFunctionPtr,   /* a function pointer */
+    TypeMacro,         /* a macro */
+    TypePointer,       /* a pointer */
+    TypeArray,         /* an array of a sub-type */
+    TypeStruct,        /* aggregate type */
+    TypeUnion,         /* merged type */
+    TypeEnum,          /* enumerated integer type */
+    TypeGotoLabel,     /* a label we can "goto" */
+    Type_Type          /* a type for storing types */
 };
 
 /* data type */
