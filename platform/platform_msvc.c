@@ -7,9 +7,6 @@ static int gEnableDebugger = true;
 static int gEnableDebugger = false;
 #endif
 
-/* mark where to end the program for platforms which require this */
-jmp_buf PicocExitBuf;
-
 void PlatformInit(Picoc* pc) {}
 
 void PlatformCleanup(Picoc* pc) {}

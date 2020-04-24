@@ -611,7 +611,6 @@ enum ParseResult ParseStatement(struct ParseState* Parser, int CheckTrailingSemi
     struct Value* LexerValue;
     struct Value* VarValue;
     struct ParseState PreState;
-    int GotoCallback = false;
 
 #ifdef DEBUGGER
     /* if we're debugging, check for a breakpoint */
@@ -917,7 +916,6 @@ enum ParseResult ParseStatement(struct ParseState* Parser, int CheckTrailingSemi
                 Parser->SearchGotoLabel = LexerValue->Val->Identifier;
                 Parser->Mode            = RunModeGoto;
                 Parser->FreshGotoSearch = true;
-                GotoCallback            = true;
             }
             break;
 

@@ -57,6 +57,4 @@
 #define INTERACTIVE_PROMPT_STATEMENT "picoc> "
 #define INTERACTIVE_PROMPT_LINE "     > "
 
-extern jmp_buf ExitBuf;
-
 #endif /* PLATFORM_H */

@@ -9,7 +9,7 @@ CC	:=	gcc
 CXX	:=	g++
 
 SOURCES				:=	source
-INCLUDES			:=	include
+INCLUDES			:=	include platform
 
 CFILES		:=	$(patsubst ./%,%,$(foreach dir,$(SOURCES),$(call rwildcard,$(dir),*.c)))
 CPPFILES	:=	$(patsubst ./%,%,$(foreach dir,$(SOURCES),$(call rwildcard,$(dir),*.cpp)))
