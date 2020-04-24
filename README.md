@@ -469,7 +469,10 @@ A few macros are pre-defined:
 * PICOC_VERSION - gives the picoc version as a string eg. "v2.1 beta r524"
 
 ## Function pointers
-Pointers to functions are currently not supported.
+Pointers to functions are supported.
+- typedefs on function pointer types are currently not supported
+- Pointers to pointers to functions are currently not supported
+- Arrays of function pointers are currently not supported
 
 ## Storage classes
 Many of the storage classes in C90 really only have meaning in a compiler so
