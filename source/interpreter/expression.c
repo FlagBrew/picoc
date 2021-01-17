@@ -3609,6 +3609,18 @@ int ExpressionParse(struct ParseState* Parser, struct Value** Result)
                             if (((Token == TokenLogicalOr && LHSInt) || (Token == TokenLogicalAnd && !LHSInt)) && (IgnorePrecedence > Precedence))
                                 IgnorePrecedence = Precedence;
                         }
+                        else if (Token == TokenQuestionMark && IS_NUMERIC_COERCIBLE(StackTop->Val))
+                        {
+                            long LHSInt = ExpressionCoerceInteger(StackTop->Val);
+                            if (!LHSInt && IgnorePrecedence > Precedence)
+                                IgnorePrecedence = 3;
+                        }
+                        else if(Token == TokenColon && IS_NUMERIC_COERCIBLE(StackTop->Val))
+                        {
+                            long LHSInt = ExpressionCoerceInteger(StackTop->Val);
+                            if (LHSInt && IgnorePrecedence > Precedence)
+                                IgnorePrecedence = 3;
+                        }
 
                         /* push the operator on the stack */
                         ExpressionStackPushOperator(Parser, &StackTop, OrderInfix, Token, Precedence);
