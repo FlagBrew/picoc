@@ -737,7 +737,7 @@ void ExpressionPrefixOperator(struct ParseState* Parser, struct ExpressionStack*
             {
                 ValPtr               = TopValue->Val;
                 Result               = VariableAllocValueFromType(Parser->pc, Parser,
-                    TypeGetMatching(Parser->pc, Parser, TopValue->Typ, TypePointer, 0, Parser->pc->StrEmpty, true), false, NULL, false);
+                                  TypeGetMatching(Parser->pc, Parser, TopValue->Typ, TypePointer, 0, Parser->pc->StrEmpty, true), false, NULL, false);
                 Result->Val->Pointer = (void*)ValPtr;
             }
             ExpressionStackPushValueNode(Parser, StackTop, Result);
@@ -1172,6 +1172,114 @@ void ExpressionPostfixOperator(struct ParseState* Parser, struct ExpressionStack
         ProgramFail(Parser, "invalid operation");
 }
 
+#define EXPRESSION_EVAL(TopType, BottomType, ResultPushFunc)                                                                                         \
+    TopType TopInt       = (TopType)ExpressionCoerceInteger(TopValue);                                                                               \
+    BottomType BottomInt = (BottomType)ExpressionCoerceInteger(BottomValue);                                                                         \
+    int ReturnIsInt      = 0;                                                                                                                        \
+    switch (Op)                                                                                                                                      \
+    {                                                                                                                                                \
+        case TokenAssign:                                                                                                                            \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);                                                                     \
+            break;                                                                                                                                   \
+        case TokenAddAssign:                                                                                                                         \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);                                                         \
+            break;                                                                                                                                   \
+        case TokenSubtractAssign:                                                                                                                    \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);                                                         \
+            break;                                                                                                                                   \
+        case TokenMultiplyAssign:                                                                                                                    \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);                                                         \
+            break;                                                                                                                                   \
+        case TokenDivideAssign:                                                                                                                      \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);                                                         \
+            break;                                                                                                                                   \
+        case TokenModulusAssign:                                                                                                                     \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);                                                         \
+            break;                                                                                                                                   \
+        case TokenShiftLeftAssign:                                                                                                                   \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);                                                        \
+            break;                                                                                                                                   \
+        case TokenShiftRightAssign:                                                                                                                  \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);                                                        \
+            break;                                                                                                                                   \
+        case TokenArithmeticAndAssign:                                                                                                               \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);                                                         \
+            break;                                                                                                                                   \
+        case TokenArithmeticOrAssign:                                                                                                                \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);                                                         \
+            break;                                                                                                                                   \
+        case TokenArithmeticExorAssign:                                                                                                              \
+            ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);                                                         \
+            break;                                                                                                                                   \
+        case TokenLogicalOr:                                                                                                                         \
+            ResultInt = BottomInt || TopInt;                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenLogicalAnd:                                                                                                                        \
+            ResultInt = BottomInt && TopInt;                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenArithmeticOr:                                                                                                                      \
+            ResultInt = BottomInt | TopInt;                                                                                                          \
+            break;                                                                                                                                   \
+        case TokenArithmeticExor:                                                                                                                    \
+            ResultInt = BottomInt ^ TopInt;                                                                                                          \
+            break;                                                                                                                                   \
+        case TokenAmpersand:                                                                                                                         \
+            ResultInt = BottomInt & TopInt;                                                                                                          \
+            break;                                                                                                                                   \
+        case TokenEqual:                                                                                                                             \
+            ResultInt   = BottomInt == TopInt;                                                                                                       \
+            ReturnIsInt = 1;                                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenNotEqual:                                                                                                                          \
+            ResultInt   = BottomInt != TopInt;                                                                                                       \
+            ReturnIsInt = 1;                                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenLessThan:                                                                                                                          \
+            ResultInt   = BottomInt < TopInt;                                                                                                        \
+            ReturnIsInt = 1;                                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenGreaterThan:                                                                                                                       \
+            ResultInt   = BottomInt > TopInt;                                                                                                        \
+            ReturnIsInt = 1;                                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenLessEqual:                                                                                                                         \
+            ResultInt   = BottomInt <= TopInt;                                                                                                       \
+            ReturnIsInt = 1;                                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenGreaterEqual:                                                                                                                      \
+            ResultInt   = BottomInt >= TopInt;                                                                                                       \
+            ReturnIsInt = 1;                                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenShiftLeft:                                                                                                                         \
+            ResultInt = BottomInt << TopInt;                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenShiftRight:                                                                                                                        \
+            ResultInt = BottomInt >> TopInt;                                                                                                         \
+            break;                                                                                                                                   \
+        case TokenPlus:                                                                                                                              \
+            ResultInt = BottomInt + TopInt;                                                                                                          \
+            break;                                                                                                                                   \
+        case TokenMinus:                                                                                                                             \
+            ResultInt = BottomInt - TopInt;                                                                                                          \
+            break;                                                                                                                                   \
+        case TokenAsterisk:                                                                                                                          \
+            ResultInt = BottomInt * TopInt;                                                                                                          \
+            break;                                                                                                                                   \
+        case TokenSlash:                                                                                                                             \
+            ResultInt = BottomInt / TopInt;                                                                                                          \
+            break;                                                                                                                                   \
+        case TokenModulus:                                                                                                                           \
+            ResultInt = BottomInt % TopInt;                                                                                                          \
+            break;                                                                                                                                   \
+        default:                                                                                                                                     \
+            ProgramFail(Parser, "invalid operation");                                                                                                \
+            break;                                                                                                                                   \
+    }                                                                                                                                                \
+    if (ReturnIsInt)                                                                                                                                 \
+        ExpressionPushInt(Parser, StackTop, ResultInt);                                                                                              \
+    else                                                                                                                                             \
+        ResultPushFunc(Parser, StackTop, ResultInt)
+
 /* evaluate an infix operator */
 void ExpressionInfixOperator(
     struct ParseState* Parser, struct ExpressionStack** StackTop, enum LexToken Op, struct Value* BottomValue, struct Value* TopValue)
@@ -1553,1592 +1661,85 @@ void ExpressionInfixOperator(
     else if (IS_INTEGER_NUMERIC(TopValue) && IS_INTEGER_NUMERIC(BottomValue))
     {
         /* integer operation */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
         if (INTEGER_PROMOTES_TO_INT(TopValue))
         {
-            int TopInt = (int)ExpressionCoerceInteger(TopValue);
             if (INTEGER_PROMOTES_TO_INT(BottomValue))
             {
-                int BottomInt = (int)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushInt(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(int, int, ExpressionPushInt);
             }
             else if (BottomValue->Typ->Base == TypeUnsignedInt)
             {
-                unsigned int BottomInt = (unsigned int)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedInt(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(int, unsigned int, ExpressionPushUnsignedInt);
             }
             else if (BottomValue->Typ->Base == TypeLong)
             {
-                long BottomInt = ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(int, long, ExpressionPushLong);
             }
             else if (BottomValue->Typ->Base == TypeUnsignedLong)
             {
-                unsigned long BottomInt = (unsigned long)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(int, unsigned long, ExpressionPushUnsignedLong);
             }
         }
         else if (TopValue->Typ->Base == TypeUnsignedInt)
         {
-            unsigned int TopInt = (unsigned int)ExpressionCoerceInteger(TopValue);
             if (INTEGER_PROMOTES_TO_INT(BottomValue))
             {
-                int BottomInt = (int)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedInt(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(unsigned int, int, ExpressionPushUnsignedInt);
             }
             else if (BottomValue->Typ->Base == TypeUnsignedInt)
             {
-                unsigned int BottomInt = (unsigned int)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedInt(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(unsigned int, unsigned int, ExpressionPushUnsignedInt);
             }
             else if (BottomValue->Typ->Base == TypeLong)
             {
-                long BottomInt = ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                // Not entirely certain why this is the case
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(unsigned int, long, ExpressionPushLong);
             }
             else if (BottomValue->Typ->Base == TypeUnsignedLong)
             {
-                unsigned long BottomInt = (unsigned long)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(unsigned int, unsigned long, ExpressionPushUnsignedLong);
             }
         }
         else if (TopValue->Typ->Base == TypeLong)
         {
-            long TopInt = ExpressionCoerceInteger(TopValue);
             if (INTEGER_PROMOTES_TO_INT(BottomValue))
             {
-                int BottomInt = (int)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(long, int, ExpressionPushLong);
             }
             else if (BottomValue->Typ->Base == TypeUnsignedInt)
             {
-                unsigned int BottomInt = (unsigned int)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                // Not entirely certain why this is the case
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(long, unsigned int, ExpressionPushUnsignedLong);
             }
             else if (BottomValue->Typ->Base == TypeLong)
             {
-                long BottomInt = ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(long, long, ExpressionPushLong);
             }
             else if (BottomValue->Typ->Base == TypeUnsignedLong)
             {
-                unsigned long BottomInt = (unsigned long)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(long, unsigned long, ExpressionPushUnsignedLong);
             }
         }
         else if (TopValue->Typ->Base == TypeUnsignedLong)
         {
-            unsigned long TopInt = (unsigned long)ExpressionCoerceInteger(TopValue);
             if (INTEGER_PROMOTES_TO_INT(BottomValue))
             {
-                int BottomInt = (int)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(unsigned long, int, ExpressionPushUnsignedLong);
             }
             else if (BottomValue->Typ->Base == TypeUnsignedInt)
             {
-                unsigned int BottomInt = (unsigned int)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(unsigned long, unsigned int, ExpressionPushUnsignedLong);
             }
             else if (BottomValue->Typ->Base == TypeLong)
             {
-                long BottomInt = ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(unsigned long, long, ExpressionPushUnsignedLong);
             }
             else if (BottomValue->Typ->Base == TypeUnsignedLong)
             {
-                unsigned long BottomInt = (unsigned long)ExpressionCoerceInteger(BottomValue);
-                switch (Op)
-                {
-                    case TokenAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, TopInt, false);
-                        break;
-                    case TokenAddAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt + TopInt, false);
-                        break;
-                    case TokenSubtractAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt - TopInt, false);
-                        break;
-                    case TokenMultiplyAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt * TopInt, false);
-                        break;
-                    case TokenDivideAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt / TopInt, false);
-                        break;
-                    case TokenModulusAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt % TopInt, false);
-                        break;
-                    case TokenShiftLeftAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt << TopInt, false);
-                        break;
-                    case TokenShiftRightAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt >> TopInt, false);
-                        break;
-                    case TokenArithmeticAndAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt & TopInt, false);
-                        break;
-                    case TokenArithmeticOrAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt | TopInt, false);
-                        break;
-                    case TokenArithmeticExorAssign:
-                        ResultInt = ExpressionAssignInt(Parser, BottomValue, BottomInt ^ TopInt, false);
-                        break;
-                    case TokenLogicalOr:
-                        ResultInt = BottomInt || TopInt;
-                        break;
-                    case TokenLogicalAnd:
-                        ResultInt = BottomInt && TopInt;
-                        break;
-                    case TokenArithmeticOr:
-                        ResultInt = BottomInt | TopInt;
-                        break;
-                    case TokenArithmeticExor:
-                        ResultInt = BottomInt ^ TopInt;
-                        break;
-                    case TokenAmpersand:
-                        ResultInt = BottomInt & TopInt;
-                        break;
-                    case TokenEqual:
-                        ResultInt = BottomInt == TopInt;
-                        break;
-                    case TokenNotEqual:
-                        ResultInt = BottomInt != TopInt;
-                        break;
-                    case TokenLessThan:
-                        ResultInt = BottomInt < TopInt;
-                        break;
-                    case TokenGreaterThan:
-                        ResultInt = BottomInt > TopInt;
-                        break;
-                    case TokenLessEqual:
-                        ResultInt = BottomInt <= TopInt;
-                        break;
-                    case TokenGreaterEqual:
-                        ResultInt = BottomInt >= TopInt;
-                        break;
-                    case TokenShiftLeft:
-                        ResultInt = BottomInt << TopInt;
-                        break;
-                    case TokenShiftRight:
-                        ResultInt = BottomInt >> TopInt;
-                        break;
-                    case TokenPlus:
-                        ResultInt = BottomInt + TopInt;
-                        break;
-                    case TokenMinus:
-                        ResultInt = BottomInt - TopInt;
-                        break;
-                    case TokenAsterisk:
-                        ResultInt = BottomInt * TopInt;
-                        break;
-                    case TokenSlash:
-                        ResultInt = BottomInt / TopInt;
-                        break;
-                    case TokenModulus:
-                        ResultInt = BottomInt % TopInt;
-                        break;
-                    default:
-                        ProgramFail(Parser, "invalid operation");
-                        break;
-                }
-                ExpressionPushUnsignedLong(Parser, StackTop, ResultInt);
+                EXPRESSION_EVAL(unsigned long, unsigned long, ExpressionPushUnsignedLong);
             }
         }
+#pragma GCC diagnostic pop
     }
     else if (BottomValue->Typ->Base == TypePointer && IS_NUMERIC_COERCIBLE(TopValue))
     {

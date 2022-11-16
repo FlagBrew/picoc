@@ -230,7 +230,7 @@ int ParseArrayInitializer(struct ParseState* Parser, struct Value* NewVariable, 
             {
                 SubArraySize = TypeSize(NewVariable->Typ->FromType, NewVariable->Typ->FromType->ArraySize, true);
                 SubArray     = VariableAllocValueFromExistingData(Parser, NewVariable->Typ->FromType,
-                    (union AnyValue*)(&NewVariable->Val->ArrayMem[0] + SubArraySize * ArrayIndex), true, NewVariable);
+                        (union AnyValue*)(&NewVariable->Val->ArrayMem[0] + SubArraySize * ArrayIndex), true, NewVariable);
 #ifdef DEBUG_ARRAY_INITIALIZER
                 int FullArraySize = TypeSize(NewVariable->Typ, NewVariable->Typ->ArraySize, true);
                 PRINT_SOURCE_POS();
@@ -662,8 +662,7 @@ enum ParseResult ParseStatement(struct ParseState* Parser, int CheckTrailingSemi
                 }
             }
             /* else fallthrough to expression */
-            /* no break */
-
+            /* fallthrough */
         case TokenAsterisk:
         case TokenAmpersand:
         case TokenIncrement:
@@ -702,8 +701,7 @@ enum ParseResult ParseStatement(struct ParseState* Parser, int CheckTrailingSemi
             CheckTrailingSemicolon = false;
             break;
 
-        case TokenWhile:
-        {
+        case TokenWhile: {
             struct ParseState PreConditional;
             enum RunMode PreMode = Parser->Mode;
 
@@ -733,8 +731,7 @@ enum ParseResult ParseStatement(struct ParseState* Parser, int CheckTrailingSemi
         }
         break;
 
-        case TokenDo:
-        {
+        case TokenDo: {
             struct ParseState PreStatement;
             enum RunMode PreMode = Parser->Mode;
             ParserCopyPos(&PreStatement, Parser);
@@ -919,8 +916,7 @@ enum ParseResult ParseStatement(struct ParseState* Parser, int CheckTrailingSemi
             }
             break;
 
-        case TokenDelete:
-        {
+        case TokenDelete: {
             /* try it as a function or variable name to delete */
             if (LexGetToken(Parser, &LexerValue, true) != TokenIdentifier)
                 ProgramFail(Parser, "identifier expected");

@@ -1084,7 +1084,10 @@ enum LexToken LexGetRawToken(struct ParseState* Parser, struct Value** Value, in
 #ifdef DEBUG_LEXER
     printf("Got token=%02x inc=%d pos=%d\n", Token, IncPos, Parser->CharacterPos);
 #endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
     assert(Token >= TokenNone && Token <= TokenEndOfFunction);
+#pragma GCC diagnostic pop
     return Token;
 }
 
@@ -1389,7 +1392,8 @@ void* LexCopyTokens(struct ParseState* StartParser, struct ParseState* EndParser
              pc->InteractiveCurrentLine != NULL &&
              (Pos < &pc->InteractiveCurrentLine->Tokens[0] || Pos >= &pc->InteractiveCurrentLine->Tokens[pc->InteractiveCurrentLine->NumBytes]);
              pc->InteractiveCurrentLine = pc->InteractiveCurrentLine->Next)
-        {} /* find the line we just counted */
+        {
+        } /* find the line we just counted */
 
         if (EndParser->Pos >= StartParser->Pos && EndParser->Pos < &pc->InteractiveCurrentLine->Tokens[pc->InteractiveCurrentLine->NumBytes])
         {
