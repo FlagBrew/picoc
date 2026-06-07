@@ -253,6 +253,10 @@ enum BaseType
     Type_Type          /* a type for storing types */
 };
 
+/* forward declarations */
+struct Value;
+struct ParseState;
+
 /* data type */
 struct ValueType
 {
@@ -277,7 +281,7 @@ struct FuncDef
     int VarArgs;                  /* has a variable number of arguments after the explicitly specified ones */
     struct ValueType** ParamType; /* array of parameter types */
     char** ParamName;             /* array of parameter names */
-    void (*Intrinsic)();          /* intrinsic call address or NULL */
+    void (*Intrinsic)(struct ParseState* Parser, struct Value* ReturnValue, struct Value** Param, int NumArgs); /* intrinsic call address or NULL */
     struct ParseState Body;       /* lexical tokens of the function body if not intrinsic */
 };
 
